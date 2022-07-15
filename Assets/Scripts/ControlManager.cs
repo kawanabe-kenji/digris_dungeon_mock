@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace DigrisDungeon
 {
@@ -17,6 +18,18 @@ namespace DigrisDungeon
         public Action OnFlickUpEvent;
 
         public Action OnPushEvent;
+
+        [SerializeField]
+        private Image _raycastTarget;
+
+        public bool Interactable
+        {
+            set
+            {
+                enabled = value;
+                _raycastTarget.raycastTarget = value;
+            }
+        }
 
         public void OnDrag(PointerEventData eventData)
         {

@@ -7,6 +7,8 @@ namespace DigrisDungeon
 {
     public class BlockView : MonoBehaviour
     {
+        public static readonly Vector2 CELL_SIZE = new Vector2(100f, 100f);
+
         [SerializeField]
         private RectTransform _rect;
 
@@ -18,8 +20,6 @@ namespace DigrisDungeon
 
         [SerializeField]
         private Image[] _imageFrames;
-
-        private Vector2 CellSize => _rect.sizeDelta;
 
         public void SetData(Block data)
         {
@@ -34,14 +34,14 @@ namespace DigrisDungeon
             foreach (var frame in _imageFrames) frame.enabled = false;
 
             _imageIcon.color = data.IsStrata ? new Color32(255, 150, 100, 255) : Color.white;
-            _imageIcon.rectTransform.sizeDelta = CellSize * (data.IsStrata ? 1f : 0.9f);
+            _imageIcon.rectTransform.sizeDelta = CELL_SIZE * (data.IsStrata ? 1f : 0.9f);
         }
 
         public void SetPosition(int x, int y)
         {
             _rect.anchoredPosition = new Vector2(
-                CellSize.x * x,
-                CellSize.y * y
+                CELL_SIZE.x * x,
+                CELL_SIZE.y * y
             );
         }
 

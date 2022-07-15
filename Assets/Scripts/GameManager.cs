@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using DG.Tweening;
 
 namespace DigrisDungeon
 {
@@ -17,7 +18,7 @@ namespace DigrisDungeon
         private ControlManager _controlMgr;
 
         [SerializeField]
-        private Transform _blockViewParent;
+        private RectTransform _blockViewParent;
 
         [SerializeField]
         private BlockView _blockViewPrefab;
@@ -31,8 +32,6 @@ namespace DigrisDungeon
         private BlockView[,] _boardView;
 
         private Mino _mino;
-
-        private bool _canControl;
 
         private void Awake()
         {
@@ -226,12 +225,28 @@ namespace DigrisDungeon
                             _board[x, y] = null;
                     }
                 }
+
+                _controlMgr.Interactable = false;
+                // 盤面スクロールの演出
+                var seq = DOTween.Sequence();
+                seq.OnStart(() =>
+                {
+                    DrawBoard();
+                    _blockViewParent.anchoredPosition = Vector2.down * BlockView.CELL_SIZE.y * diff;
+                });
+                seq.AppendInterval(0.3f);
+                seq.Append(_blockViewParent.DOAnchorPosY(0f, 0.2f * diff).SetEase(Ease.OutCubic));
+                seq.OnComplete(() =>
+                {
+                    DrawMino();
+                    _controlMgr.Interactable = true;
+                });
+
+                return;
             }
 
             // 盤面データをビューに反映
             DrawBoard();
-
-            // TODO: 地層スクロール演出があるときは演出が終わるまで実行を待つ
             DrawMino();
         }
 
