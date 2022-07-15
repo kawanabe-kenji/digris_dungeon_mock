@@ -70,14 +70,26 @@ namespace DigrisDungeon
                 }
                 else
                 {
-                    foreach (var kvp in _mino.Blocks)
-                    {
-                        Vector2Int index = _mino.BoardPos + kvp.Key;
-                        _board[index.x, index.y] = kvp.Value;
-                    }
-                    _mino.Respawn(Mino.RandomShapeType());
-                    _mino.BoardPos = MINO_SPAWN_POS;
+                    PutMino();
+                    RespawnMino();
                 }
+                RefreshBoard();
+            };
+
+            _controlMgr.OnFlickDownEvent = () =>
+            {
+                Vector2Int boardPos = _mino.BoardPos;
+                int count = 0;
+                do
+                {
+                    boardPos += Vector2Int.down;
+                    count++;
+                } while (CanPutMino(boardPos) && count < BoardSize.y);
+                _mino.BoardPos = boardPos + Vector2Int.up;
+
+                PutMino();
+                RespawnMino();
+
                 RefreshBoard();
             };
 
@@ -88,7 +100,7 @@ namespace DigrisDungeon
                 {
                     _mino.Rotate();
                     count++;
-                } while (count < 4 && !CanPutMino(_mino.BoardPos));
+                } while (!CanPutMino(_mino.BoardPos) && count < 4);
                 RefreshBoard();
             };
         }
@@ -183,6 +195,21 @@ namespace DigrisDungeon
             }
             return true;
 
+        }
+
+        private void PutMino()
+        {
+            foreach (var kvp in _mino.Blocks)
+            {
+                Vector2Int index = _mino.BoardPos + kvp.Key;
+                _board[index.x, index.y] = kvp.Value;
+            }
+        }
+
+        private void RespawnMino()
+        {
+            _mino.Respawn(Mino.RandomShapeType());
+            _mino.BoardPos = MINO_SPAWN_POS;
         }
     }
 }
