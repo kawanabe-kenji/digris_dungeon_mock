@@ -6,6 +6,9 @@ namespace DigrisDungeon
 {
     public class Block
     {
+        /// <summary> 地層か否か </summary>
+        public bool IsStrata;
+
         public Block[] LinkedBlocks;
 
         public Block()

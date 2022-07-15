@@ -19,6 +19,8 @@ namespace DigrisDungeon
         [SerializeField]
         private Image[] _imageFrames;
 
+        private Vector2 CellSize => _rect.sizeDelta;
+
         public void SetData(Block data)
         {
             if (data == null)
@@ -30,14 +32,16 @@ namespace DigrisDungeon
             _imageIcon.enabled = true;
             _imageBase.enabled = false;
             foreach (var frame in _imageFrames) frame.enabled = false;
+
+            _imageIcon.color = data.IsStrata ? new Color32(255, 150, 100, 255) : Color.white;
+            _imageIcon.rectTransform.sizeDelta = CellSize * (data.IsStrata ? 1f : 0.9f);
         }
 
         public void SetPosition(int x, int y)
         {
-            Vector2 cellSize = _rect.sizeDelta;
             _rect.anchoredPosition = new Vector2(
-                cellSize.x * x,
-                cellSize.y * y
+                CellSize.x * x,
+                CellSize.y * y
             );
         }
 

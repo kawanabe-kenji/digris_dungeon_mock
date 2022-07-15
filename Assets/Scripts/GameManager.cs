@@ -10,6 +10,9 @@ namespace DigrisDungeon
     {
         private static readonly Vector2Int MINO_SPAWN_POS = new Vector2Int(5, 14);
 
+        /// <summary> 地層の最低高さ </summary>
+        private const int MIN_HEIGHT_STRATA = 4;
+
         [SerializeField]
         private ControlManager _controlMgr;
 
@@ -28,6 +31,8 @@ namespace DigrisDungeon
         private BlockView[,] _boardView;
 
         private Mino _mino;
+
+        private bool _canControl;
 
         private void Awake()
         {
@@ -179,6 +184,7 @@ namespace DigrisDungeon
 
         private void RefreshBoard()
         {
+            // ラインが揃ってる列を空けて下に詰める
             List<int> alignLines = GetAlignLines();
             for(int i = alignLines.Count - 1; i >= 0; i--)
             {
@@ -189,6 +195,48 @@ namespace DigrisDungeon
                 }
             }
 
+            // 必要な深さだけ画面をスクロールして地層を露出させる
+            int highestStrata = -1;
+            for(int y = 0; y < BoardSize.y; y++)
+            for(int x = 0; x < BoardSize.x; x++)
+            {
+                if(_board[x, y] != null && _board[x, y].IsStrata)
+                {
+                    highestStrata = y;
+                    break;
+                }
+            }
+            if(highestStrata < MIN_HEIGHT_STRATA)
+            {
+                int diff = MIN_HEIGHT_STRATA - highestStrata;
+                for (int y = BoardSize.y - 1; y >= 0; y--)
+                {
+                    int ty = y - diff;
+                    int emptyX = UnityEngine.Random.Range(0, BoardSize.x);
+                    for (int x = 0; x < BoardSize.x; x++)
+                    {
+                        if (ty >= 0)
+                            _board[x, y] = _board[x, ty];
+                        else if (x != emptyX)
+                        {
+                            _board[x, y] = new Block();
+                            _board[x, y].IsStrata = true;
+                        }
+                        else
+                            _board[x, y] = null;
+                    }
+                }
+            }
+
+            // 盤面データをビューに反映
+            DrawBoard();
+
+            // TODO: 地層スクロール演出があるときは演出が終わるまで実行を待つ
+            DrawMino();
+        }
+
+        private void DrawBoard()
+        {
             for (int y = 0; y < BoardSize.y; y++)
             {
                 for (int x = 0; x < BoardSize.x; x++)
@@ -196,8 +244,11 @@ namespace DigrisDungeon
                     _boardView[x, y].SetData(_board[x, y]);
                 }
             }
+        }
 
-            foreach(var kvp in _mino.Blocks)
+        private void DrawMino()
+        {
+            foreach (var kvp in _mino.Blocks)
             {
                 Vector2Int offset = kvp.Key;
                 BlockView view = GetBlockView(_mino.BoardPos + offset);
