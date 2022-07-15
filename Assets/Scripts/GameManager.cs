@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DigrisDungeon
 {
@@ -47,6 +48,16 @@ namespace DigrisDungeon
             RefreshBoard();
 
             InitControl();
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.R)) Reset();
+        }
+
+        private void Reset()
+        {
+            SceneManager.LoadScene(0);
         }
 
         private void InitControl()
@@ -224,6 +235,12 @@ namespace DigrisDungeon
         {
             _mino.Respawn(Mino.RandomShapeType());
             _mino.BoardPos = MINO_SPAWN_POS;
+
+            // FIXME: ミノが上に詰まった時
+            if (!CanPutMino(MINO_SPAWN_POS))
+            {
+                Reset();
+            }
         }
     }
 }
