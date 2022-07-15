@@ -106,11 +106,15 @@ namespace DigrisDungeon
         }
 
         #region Board Management
+        private Block GetBlock(int x, int y)
+        {
+            if (x < 0 || x >= _board.GetLength(0)) return null;
+            if (y < 0 || y >= _board.GetLength(1)) return null;
+            return _board[x, y];
+        }
         private Block GetBlock(Vector2Int index)
         {
-            if (index.x < 0 || index.x >= _board.GetLength(0)) return null;
-            if (index.y < 0 || index.y >= _board.GetLength(1)) return null;
-            return _board[index.x, index.y];
+            return GetBlock(index.x, index.y);
         }
 
         private BlockView GetBlockView(Vector2Int index)
@@ -144,26 +148,36 @@ namespace DigrisDungeon
             }
         }
 
-        public List<int> GetAligLines()
+        private List<int> GetAlignLines()
         {
-            List<int> aligLines = new List<int>();
+            List<int> alignLines = new List<int>();
             for (int y = 0; y < BoardSize.y; y++)
             {
                 int xCount = 0;
                 for (int x = 0; x < BoardSize.x; x++)
                 {
-                    var block = _board[x, y];
+                    Block block = _board[x, y];
                     if (block == null) continue;
                     xCount++;
                 }
-                if (xCount == BoardSize.x) aligLines.Add(y);
+                if (xCount == BoardSize.x) alignLines.Add(y);
             }
-            return aligLines;
+            return alignLines;
         }
         #endregion // Board Management
 
         private void RefreshBoard()
         {
+            List<int> alignLines = GetAlignLines();
+            for(int i = alignLines.Count - 1; i >= 0; i--)
+            {
+                for (int y = alignLines[i]; y < BoardSize.y; y++)
+                for (int x = 0; x < BoardSize.x; x++)
+                {
+                    _board[x, y] = GetBlock(x, y + 1);
+                }
+            }
+
             for (int y = 0; y < BoardSize.y; y++)
             {
                 for (int x = 0; x < BoardSize.x; x++)
@@ -186,8 +200,8 @@ namespace DigrisDungeon
         {
             foreach (var kvp in _mino.Blocks)
             {
-                var offset = kvp.Key;
-                var index = boardPos + offset;
+                Vector2Int offset = kvp.Key;
+                Vector2Int index = boardPos + offset;
                 // 指定したミノを指定した位置に置いたとき、壁や地面にぶつかっているかどうか
                 if (index.x < 0 || index.y < 0 || index.x >= BoardSize.x) return false;
                 // 指定したミノを指定した位置に置いたとき、いずれかのブロックが設置済みブロックにぶつかっているかどうか
