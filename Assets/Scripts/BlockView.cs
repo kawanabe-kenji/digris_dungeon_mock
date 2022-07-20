@@ -15,6 +15,7 @@ namespace DigrisDungeon
 
         [SerializeField]
         private RectTransform _rect;
+        public RectTransform Rect => _rect;
 
         [SerializeField]
         private Image _imageIcon;
@@ -52,6 +53,18 @@ namespace DigrisDungeon
                 CELL_SIZE.x * x,
                 CELL_SIZE.y * y
             );
+        }
+        public void SetPositionX(int x)
+        {
+            Vector2 anchoredPos = _rect.anchoredPosition;
+            anchoredPos.x = CELL_SIZE.x * x;
+            _rect.anchoredPosition = anchoredPos;
+        }
+        public void SetPositionY(int y)
+        {
+            Vector2 anchoredPos = _rect.anchoredPosition;
+            anchoredPos.y = CELL_SIZE.y * y;
+            _rect.anchoredPosition = anchoredPos;
         }
 
         public void SetPosition(Vector2Int index)

@@ -24,6 +24,9 @@ namespace DigrisDungeon
         private BlockView _blockViewPrefab;
 
         [SerializeField]
+        private Transform _effectsParent;
+
+        [SerializeField]
         private Vector2Int _boardSize = new Vector2Int(10, 17);
         public Vector2Int BoardSize => _boardSize;
 
@@ -54,9 +57,16 @@ namespace DigrisDungeon
 
             _mino = Mino.Create(Mino.RandomShapeType());
             _mino.BoardPos = MINO_SPAWN_POS;
-            RefreshBoard();
 
             InitControl();
+
+            _controlMgr.Interactable = false;
+            Sequence seq = DOTween.Sequence();
+            ScrollStrata(seq);
+            seq.AppendCallback(() => {
+                DrawMino();
+                _controlMgr.Interactable = true;
+            });
         }
 
         private void Update()
@@ -141,11 +151,15 @@ namespace DigrisDungeon
             return GetBlock(index.x, index.y);
         }
 
+        private BlockView GetBlockView(int x, int y)
+        {
+            if (x < 0 || x >= _boardView.GetLength(0)) return null;
+            if (y < 0 || y >= _boardView.GetLength(1)) return null;
+            return _boardView[x, y];
+        }
         private BlockView GetBlockView(Vector2Int index)
         {
-            if (index.x < 0 || index.x >= _boardView.GetLength(0)) return null;
-            if (index.y < 0 || index.y >= _boardView.GetLength(1)) return null;
-            return _boardView[index.x, index.y];
+            return GetBlockView(index.x, index.y);
         }
 
         private Vector2Int GetIndex(Block block)
@@ -188,36 +202,48 @@ namespace DigrisDungeon
             }
             return alignLines;
         }
+
+        private Vector2 GetBoardPosition(int x, int y)
+        {
+            return new Vector2(
+                BlockView.CELL_SIZE.x * (0.5f + x),
+                BlockView.CELL_SIZE.y * (0.5f + y)
+            );
+        }
         #endregion // Board Management
 
         private void RefreshBoard()
         {
+            _controlMgr.Interactable = false;
+
+            Sequence seq = DOTween.Sequence();
+
             // ラインが揃ってる列を崩す
-            BrakeAlignLines();
-            DrawBoard();
+            BrakeAlignLines(seq);
 
             bool isDropped;
             do
             {
                 // 単一ブロックを落とす
-                isDropped = DropSingleBlock();
+                isDropped = DropSingleBlock(seq);
                 // ラインが揃ってる列を空けて下に詰める
-                EraseAlignLines();
+                EraseAlignLines(seq);
+                // 必要な深さだけ画面をスクロールして地層を露出させる
+                ScrollStrata(seq);
             } while (isDropped);
 
-            // 必要な深さだけ画面をスクロールして地層を露出させる
-            bool isScroll = ScrollStrata();
-            if (isScroll) return;
-
-            // 盤面データをビューに反映
-            DrawBoard();
-            DrawMino();
+            seq.AppendCallback(() => {
+                // 盤面データをビューに反映
+                DrawBoard();
+                DrawMino();
+                _controlMgr.Interactable = true;
+            });
         }
 
         /// <summary>
         /// ラインが揃ってる列を崩す
         /// </summary>
-        private void BrakeAlignLines()
+        private void BrakeAlignLines(Sequence seq)
         {
             List<int> alignLines = GetAlignLines();
             for (int i = alignLines.Count - 1; i >= 0; i--)
@@ -234,16 +260,26 @@ namespace DigrisDungeon
                     brokenBlock.LinkedBlocks.Clear();
                     // 地層ブロックフラグを外す
                     brokenBlock.IsStrata = false;
+
+                    Vector2 boardPos = GetBoardPosition(x, y);
+                    seq.AppendCallback(() => {
+                        RectTransform effectPrefab = Resources.Load<RectTransform>("Effects/ef_stone_impact/ef_stone_impact_rect");
+                        RectTransform effect = Instantiate(effectPrefab, _effectsParent);
+                        effect.anchoredPosition = boardPos;
+                    });
                 }
             }
+            seq.AppendCallback(DrawBoard);
+            seq.AppendInterval(0.5f);
         }
 
         /// <summary>
         /// 単一ブロックを落とす
         /// </summary>
         /// <returns>ドロップが発生したかどうか</returns>
-        private bool DropSingleBlock()
+        private bool DropSingleBlock(Sequence seq)
         {
+            seq.AppendCallback(DrawBoard);
             bool isDropped = false;
             for (int y = 0; y < BoardSize.y; y++)
             {
@@ -258,19 +294,31 @@ namespace DigrisDungeon
                         dropY = ty;
                     }
                     if (dropY == y) continue;
-                    _board[x, dropY] = _board[x, y];
+                    _board[x, dropY] = block;
                     _board[x, y] = null;
                     isDropped = true;
+
+                    BlockView blockView = GetBlockView(x, dropY);
+                    BlockView preBlockView = GetBlockView(x, y);
+                    int preY = y;
+                    seq.PrependCallback(() => {
+                        blockView.SetData(block);
+                        blockView.SetPositionY(preY);
+                        preBlockView.SetData(null);
+                    });
+                    seq.Join(blockView.Rect.DOAnchorPosY(BlockView.CELL_SIZE.y * dropY, 1f).SetEase(Ease.OutCubic));
                 }
             }
+            if(isDropped) seq.AppendInterval(0.2f);
             return isDropped;
         }
 
         /// <summary>
         /// ラインが揃ってる列を空けて下に詰める
         /// </summary>
-        private void EraseAlignLines()
+        private void EraseAlignLines(Sequence seq)
         {
+            seq.AppendCallback(DrawBoard);
             List<int> alignLines = GetAlignLines();
             for (int i = alignLines.Count - 1; i >= 0; i--)
             {
@@ -279,23 +327,45 @@ namespace DigrisDungeon
                     for (int x = 0; x < BoardSize.x; x++)
                     {
                         Block erasedBlock = _board[x, y];
-                        if (y == alignLines[i] && erasedBlock != null)
+                        bool isEraseLine = y == alignLines[i];
+                        if (isEraseLine && erasedBlock != null)
                         {
                             // 消す対象のブロックと連結するブロックから、連結を外す
                             foreach (Block linckedBlock in erasedBlock.LinkedBlocks)
                                 linckedBlock.LinkedBlocks.Remove(erasedBlock);
                         }
-                        _board[x, y] = GetBlock(x, y + 1);
+                        int dropY = y + 1;
+                        Block dropBlock = GetBlock(x, dropY);
+                        _board[x, y] = dropBlock;
+
+                        BlockView blockView = GetBlockView(x, y);
+                        Vector2 boardPos = GetBoardPosition(x, y);
+                        seq.PrependCallback(() => {
+                            blockView.SetData(dropBlock);
+                            if (isEraseLine && dropBlock != null)
+                            {
+                                blockView.SetPositionY(dropY);
+                                RectTransform effectPrefab = Resources.Load<RectTransform>("Effects/ef_impact/ef_impact_rect");
+                                RectTransform effect = Instantiate(effectPrefab, _effectsParent);
+                                effect.anchoredPosition = boardPos;
+                            }
+                        });
+                        if (dropBlock != null)
+                        {
+                            int ty = y;
+                            seq.Join(blockView.Rect.DOAnchorPosY(BlockView.CELL_SIZE.y * ty, 1f).SetEase(Ease.OutCubic));
+                        }
                     }
                 }
             }
+            if (alignLines.Count > 0) seq.AppendInterval(0.2f);
         }
 
         /// <summary>
         /// 必要な深さだけ画面をスクロールして地層を露出させる
         /// </summary>
         /// <returns>スクロールしたか否か</returns>
-        private bool ScrollStrata()
+        private void ScrollStrata(Sequence seq)
         {
             int highestStrata = -1;
             for (int y = 0; y < BoardSize.y; y++)
@@ -308,7 +378,7 @@ namespace DigrisDungeon
                 }
             }
 
-            if (highestStrata >= MIN_HEIGHT_STRATA) return false;
+            if (highestStrata >= MIN_HEIGHT_STRATA) return;
 
             int diff = MIN_HEIGHT_STRATA - highestStrata;
             for (int y = BoardSize.y - 1; y >= 0; y--)
@@ -329,23 +399,14 @@ namespace DigrisDungeon
                 }
             }
 
-            _controlMgr.Interactable = false;
             // 盤面スクロールの演出
-            var seq = DOTween.Sequence();
-            seq.OnStart(() =>
+            seq.AppendCallback(() =>
             {
                 DrawBoard();
                 _blockViewParent.anchoredPosition = Vector2.down * BlockView.CELL_SIZE.y * diff;
             });
             seq.AppendInterval(0.3f);
             seq.Append(_blockViewParent.DOAnchorPosY(0f, 0.2f * diff).SetEase(Ease.OutCubic));
-            seq.OnComplete(() =>
-            {
-                DrawMino();
-                _controlMgr.Interactable = true;
-            });
-
-            return true;
         }
 
         private void DrawBoard()
