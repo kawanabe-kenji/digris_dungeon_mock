@@ -9,6 +9,10 @@ namespace DigrisDungeon
     {
         public static readonly Vector2 CELL_SIZE = new Vector2(100f, 100f);
 
+        private const string PATH_ICON_BLOCK = "Sprites/Blocks/block_stone";
+
+        private const string PATH_ICON_BLOCK_BROKEN = "Sprites/Blocks/block_stone_brake_masked";
+
         [SerializeField]
         private RectTransform _rect;
 
@@ -35,6 +39,11 @@ namespace DigrisDungeon
 
             _imageIcon.color = data.IsStrata ? new Color32(255, 150, 100, 255) : Color.white;
             _imageIcon.rectTransform.sizeDelta = CELL_SIZE * (data.IsStrata ? 1f : 0.9f);
+
+            if(data.IsStrata || data.IsMino())
+                _imageIcon.sprite = Resources.Load<Sprite>(PATH_ICON_BLOCK);
+            else
+                _imageIcon.sprite = Resources.Load<Sprite>(PATH_ICON_BLOCK_BROKEN);
         }
 
         public void SetPosition(int x, int y)

@@ -77,7 +77,8 @@ namespace DigrisDungeon
                 if (CanPutMino(boardPos))
                 {
                     _mino.BoardPos = boardPos;
-                    RefreshBoard();
+                    DrawBoard();
+                    DrawMino();
                 }
             };
 
@@ -87,13 +88,15 @@ namespace DigrisDungeon
                 if (CanPutMino(boardPos))
                 {
                     _mino.BoardPos = boardPos;
+                    DrawBoard();
+                    DrawMino();
                 }
                 else
                 {
                     PutMino();
                     RespawnMino();
+                    RefreshBoard();
                 }
-                RefreshBoard();
             };
 
             _controlMgr.OnFlickDownEvent = () =>
@@ -121,7 +124,8 @@ namespace DigrisDungeon
                     _mino.Rotate();
                     count++;
                 } while (!CanPutMino(_mino.BoardPos) && count < 4);
-                RefreshBoard();
+                DrawBoard();
+                DrawMino();
             };
         }
 
@@ -188,71 +192,160 @@ namespace DigrisDungeon
 
         private void RefreshBoard()
         {
-            // ラインが揃ってる列を空けて下に詰める
-            List<int> alignLines = GetAlignLines();
-            for(int i = alignLines.Count - 1; i >= 0; i--)
+            // ラインが揃ってる列を崩す
+            BrakeAlignLines();
+            DrawBoard();
+
+            bool isDropped;
+            do
             {
-                for (int y = alignLines[i]; y < BoardSize.y; y++)
-                for (int x = 0; x < BoardSize.x; x++)
-                {
-                    _board[x, y] = GetBlock(x, y + 1);
-                }
-            }
+                // 単一ブロックを落とす
+                isDropped = DropSingleBlock();
+                // ラインが揃ってる列を空けて下に詰める
+                EraseAlignLines();
+            } while (isDropped);
 
             // 必要な深さだけ画面をスクロールして地層を露出させる
-            int highestStrata = -1;
-            for(int y = 0; y < BoardSize.y; y++)
-            for(int x = 0; x < BoardSize.x; x++)
+            bool isScroll = ScrollStrata();
+            if (isScroll) return;
+
+            // 盤面データをビューに反映
+            DrawBoard();
+            DrawMino();
+        }
+
+        /// <summary>
+        /// ラインが揃ってる列を崩す
+        /// </summary>
+        private void BrakeAlignLines()
+        {
+            List<int> alignLines = GetAlignLines();
+            for (int i = alignLines.Count - 1; i >= 0; i--)
             {
-                if(_board[x, y] != null && _board[x, y].IsStrata)
+                int y = alignLines[i];
+                for (int x = 0; x < BoardSize.x; x++)
+                {
+                    Block brokenBlock = _board[x, y];
+                    if (brokenBlock == null) continue;
+                    // 対象ブロックと連結するブロックから、連結を外す
+                    foreach (Block linckedBlock in brokenBlock.LinkedBlocks)
+                        linckedBlock.LinkedBlocks.Remove(brokenBlock);
+                    // 対象ブロック自身から全ての連結を外す
+                    brokenBlock.LinkedBlocks.Clear();
+                    // 地層ブロックフラグを外す
+                    brokenBlock.IsStrata = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 単一ブロックを落とす
+        /// </summary>
+        /// <returns>ドロップが発生したかどうか</returns>
+        private bool DropSingleBlock()
+        {
+            bool isDropped = false;
+            for (int y = 0; y < BoardSize.y; y++)
+            {
+                for (int x = 0; x < BoardSize.x; x++)
+                {
+                    Block block = _board[x, y];
+                    if (block == null || block.IsStrata || block.IsMino()) continue;
+                    int dropY = y;
+                    for (int ty = y - 1; ty >= 0; ty--)
+                    {
+                        if (_board[x, ty] != null) break;
+                        dropY = ty;
+                    }
+                    if (dropY == y) continue;
+                    _board[x, dropY] = _board[x, y];
+                    _board[x, y] = null;
+                    isDropped = true;
+                }
+            }
+            return isDropped;
+        }
+
+        /// <summary>
+        /// ラインが揃ってる列を空けて下に詰める
+        /// </summary>
+        private void EraseAlignLines()
+        {
+            List<int> alignLines = GetAlignLines();
+            for (int i = alignLines.Count - 1; i >= 0; i--)
+            {
+                for (int y = alignLines[i]; y < BoardSize.y; y++)
+                {
+                    for (int x = 0; x < BoardSize.x; x++)
+                    {
+                        Block erasedBlock = _board[x, y];
+                        if (y == alignLines[i] && erasedBlock != null)
+                        {
+                            // 消す対象のブロックと連結するブロックから、連結を外す
+                            foreach (Block linckedBlock in erasedBlock.LinkedBlocks)
+                                linckedBlock.LinkedBlocks.Remove(erasedBlock);
+                        }
+                        _board[x, y] = GetBlock(x, y + 1);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 必要な深さだけ画面をスクロールして地層を露出させる
+        /// </summary>
+        /// <returns>スクロールしたか否か</returns>
+        private bool ScrollStrata()
+        {
+            int highestStrata = -1;
+            for (int y = 0; y < BoardSize.y; y++)
+            for (int x = 0; x < BoardSize.x; x++)
+            {
+                if (_board[x, y] != null && _board[x, y].IsStrata)
                 {
                     highestStrata = y;
                     break;
                 }
             }
-            if(highestStrata < MIN_HEIGHT_STRATA)
+
+            if (highestStrata >= MIN_HEIGHT_STRATA) return false;
+
+            int diff = MIN_HEIGHT_STRATA - highestStrata;
+            for (int y = BoardSize.y - 1; y >= 0; y--)
             {
-                int diff = MIN_HEIGHT_STRATA - highestStrata;
-                for (int y = BoardSize.y - 1; y >= 0; y--)
+                int ty = y - diff;
+                int emptyX = UnityEngine.Random.Range(0, BoardSize.x);
+                for (int x = 0; x < BoardSize.x; x++)
                 {
-                    int ty = y - diff;
-                    int emptyX = UnityEngine.Random.Range(0, BoardSize.x);
-                    for (int x = 0; x < BoardSize.x; x++)
+                    if (ty >= 0)
+                        _board[x, y] = _board[x, ty];
+                    else if (x != emptyX)
                     {
-                        if (ty >= 0)
-                            _board[x, y] = _board[x, ty];
-                        else if (x != emptyX)
-                        {
-                            _board[x, y] = new Block();
-                            _board[x, y].IsStrata = true;
-                        }
-                        else
-                            _board[x, y] = null;
+                        _board[x, y] = new Block();
+                        _board[x, y].IsStrata = true;
                     }
+                    else
+                        _board[x, y] = null;
                 }
-
-                _controlMgr.Interactable = false;
-                // 盤面スクロールの演出
-                var seq = DOTween.Sequence();
-                seq.OnStart(() =>
-                {
-                    DrawBoard();
-                    _blockViewParent.anchoredPosition = Vector2.down * BlockView.CELL_SIZE.y * diff;
-                });
-                seq.AppendInterval(0.3f);
-                seq.Append(_blockViewParent.DOAnchorPosY(0f, 0.2f * diff).SetEase(Ease.OutCubic));
-                seq.OnComplete(() =>
-                {
-                    DrawMino();
-                    _controlMgr.Interactable = true;
-                });
-
-                return;
             }
 
-            // 盤面データをビューに反映
-            DrawBoard();
-            DrawMino();
+            _controlMgr.Interactable = false;
+            // 盤面スクロールの演出
+            var seq = DOTween.Sequence();
+            seq.OnStart(() =>
+            {
+                DrawBoard();
+                _blockViewParent.anchoredPosition = Vector2.down * BlockView.CELL_SIZE.y * diff;
+            });
+            seq.AppendInterval(0.3f);
+            seq.Append(_blockViewParent.DOAnchorPosY(0f, 0.2f * diff).SetEase(Ease.OutCubic));
+            seq.OnComplete(() =>
+            {
+                DrawMino();
+                _controlMgr.Interactable = true;
+            });
+
+            return true;
         }
 
         private void DrawBoard()

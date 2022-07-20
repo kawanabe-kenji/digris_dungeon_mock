@@ -11,6 +11,11 @@ namespace DigrisDungeon
 
         public List<Block> LinkedBlocks;
 
+        public bool IsMino()
+        {
+            return LinkedBlocks.Count > 0;
+        }
+
         public Block()
         {
             LinkedBlocks = new List<Block>();
