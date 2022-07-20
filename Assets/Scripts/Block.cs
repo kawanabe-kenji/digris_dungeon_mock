@@ -9,11 +9,11 @@ namespace DigrisDungeon
         /// <summary> 地層か否か </summary>
         public bool IsStrata;
 
-        public List<Block> LinkedBlocks;
+        public Block[] LinkedBlocks;
 
         public Block()
         {
-            LinkedBlocks = new List<Block>();
+            LinkedBlocks = new Block[(int)DirectionType.Max];
         }
     }
 }

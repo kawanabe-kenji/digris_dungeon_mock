@@ -67,22 +67,9 @@ namespace DigrisDungeon
             Blocks.Add(Vector2Int.zero, new Block());
 
             var offsets = SHAPE_PATTERN[type];
-            Block[] linkedBlocks = new Block[offsets.Length];
-            for (int i = 0; i < offsets.Length; i++)
+            foreach (var offset in offsets)
             {
-                Block block = new Block();
-                Blocks.Add(offsets[i], block);
-                linkedBlocks[i] = block;
-            }
-
-            foreach (var kvp in Blocks)
-            {
-                Block block = kvp.Value;
-                foreach (var linkedBlock in linkedBlocks)
-                {
-                    if (linkedBlock != block)
-                        block.LinkedBlocks.Add(linkedBlock);
-                }
+                Blocks.Add(offset, new Block());
             }
         }
 
