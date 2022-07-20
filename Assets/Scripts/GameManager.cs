@@ -33,6 +33,11 @@ namespace DigrisDungeon
 
         private Mino _mino;
 
+        public static int Distance(Vector2Int a, Vector2Int b)
+        {
+            return Math.Max(Mathf.Abs(a.x - b.x), Mathf.Abs(a.y - b.y));
+        }
+
         private void Awake()
         {
             _board = new Block[BoardSize.x, BoardSize.y];

@@ -71,6 +71,22 @@ namespace DigrisDungeon
             {
                 Blocks.Add(offset, new Block());
             }
+
+            foreach (var kvp in Blocks)
+            {
+                Vector2Int offset = kvp.Key;
+                Block block = kvp.Value;
+                foreach (var kvp2 in Blocks)
+                {
+                    Vector2Int linkedOffset = kvp2.Key;
+                    // 隣接ブロックをLinkedBlocksに登録
+                    if (GameManager.Distance(offset, linkedOffset) == 1)
+                    {
+                        Block linkedBlock = kvp2.Value;
+                        block.LinkedBlocks.Add(linkedBlock);
+                    }
+                }
+            }
         }
 
         public void Rotate()
