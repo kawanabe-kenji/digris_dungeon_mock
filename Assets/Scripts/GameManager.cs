@@ -436,6 +436,14 @@ namespace DigrisDungeon
             seq.Append(_blockViewParent.DOAnchorPosY(0f, 0.2f * diff).SetEase(Ease.OutCubic));
         }
 
+        /// <summary>
+        /// パーティモンスターがルートを歩く
+        /// </summary>
+        private void TraceSummon(Sequence seq)
+        {
+
+        }
+
         private void DrawBoard()
         {
             for (int y = 0; y < BoardSize.y; y++)
