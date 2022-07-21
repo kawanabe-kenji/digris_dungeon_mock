@@ -32,6 +32,7 @@ namespace DigrisDungeon
 
         private List<Sprite> _animSprites = new List<Sprite>();
 
+        [SerializeField]
         private float _animSpeed;
 
         public void SetData(Block data)
@@ -57,7 +58,7 @@ namespace DigrisDungeon
             {
                 _animSprites.Add(Resources.Load<Sprite>(string.Format(PATH_ICON_ROUTE, 1)));
                 _animSprites.Add(Resources.Load<Sprite>(string.Format(PATH_ICON_ROUTE, 2)));
-                _animSpeed = 0.05f;
+                _animSpeed = 0.03f;
             }
             else if(_data.Summon != null)
             {
