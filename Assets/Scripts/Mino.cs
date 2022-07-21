@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace DigrisDungeon
 {
@@ -25,15 +27,45 @@ namespace DigrisDungeon
             Max
         }
 
+        public enum UnitType
+        {
+            Default = 0,
+            Route,
+            Summon,
+            Max
+        }
+
         private readonly static Dictionary<ShapeType, Vector2Int[]> SHAPE_PATTERN = new Dictionary<ShapeType, Vector2Int[]>()
         {
-            { ShapeType.A, new Vector2Int[] { new Vector2Int(-1, 0), new Vector2Int(1, 0), new Vector2Int(2, 0) } },
-            { ShapeType.B, new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(1, 0), new Vector2Int(1, 1) } },
-            { ShapeType.C1, new Vector2Int[] { new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) } },
-            { ShapeType.C2, new Vector2Int[] { new Vector2Int(-1, 1), new Vector2Int(0, 1), new Vector2Int(1, 0) } },
-            { ShapeType.D1, new Vector2Int[] { new Vector2Int(-1, 0), new Vector2Int(1, 0), new Vector2Int(1, 1) } },
-            { ShapeType.D2, new Vector2Int[] { new Vector2Int(-1, 1), new Vector2Int(-1, 0), new Vector2Int(1, 0) } },
-            { ShapeType.E, new Vector2Int[] { new Vector2Int(-1, 0), new Vector2Int(1, 0), new Vector2Int(0, 1) } },
+            { ShapeType.A, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(1, 0), new Vector2Int(2, 0) } },
+            { ShapeType.B, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(1, 0), new Vector2Int(1, 1) } },
+            { ShapeType.C1, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) } },
+            { ShapeType.C2, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 1), new Vector2Int(0, 1), new Vector2Int(1, 0) } },
+            { ShapeType.D1, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(1, 0), new Vector2Int(1, 1) } },
+            { ShapeType.D2, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 1), new Vector2Int(-1, 0), new Vector2Int(1, 0) } },
+            { ShapeType.E, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(1, 0), new Vector2Int(0, 1) } },
+        };
+
+        private readonly static Dictionary<ShapeType, int[]> UNIT_ONE_PATTERN = new Dictionary<ShapeType, int[]>()
+        {
+            { ShapeType.A, new int[] { 3 } },
+            { ShapeType.B, new int[] { 3 } },
+            { ShapeType.C1, new int[] { 3 } },
+            { ShapeType.C2, new int[] { 1 } },
+            { ShapeType.D1, new int[] { 1, 3 } },
+            { ShapeType.D2, new int[] { 1, 3 } },
+            { ShapeType.E, new int[] { 1, 2, 3 } },
+        };
+
+        private readonly static Dictionary<ShapeType, int[][]> UNIT_TWO_PATTERN = new Dictionary<ShapeType, int[][]>()
+        {
+            { ShapeType.A, new int[][] { new int[] { 2, 3 } } },
+            { ShapeType.B, new int[][] { new int[] { 1, 3 } } },
+            { ShapeType.C1, new int[][] { new int[] { 2, 3 } } },
+            { ShapeType.C2, new int[][] { new int[] { 1, 2 } } },
+            { ShapeType.D1, new int[][] { new int[] { 0, 1 }, new int[] { 2, 3 } } },
+            { ShapeType.D2, new int[][] { new int[] { 0, 3 }, new int[] { 1, 2 } } },
+            { ShapeType.E, new int[][] { new int[] { 0, 1 }, new int[] { 0, 2 }, new int[] { 0, 3 } } },
         };
         #endregion // Constant
 
@@ -64,12 +96,19 @@ namespace DigrisDungeon
             _type = type;
 
             Blocks.Clear();
-            Blocks.Add(Vector2Int.zero, new Block());
 
-            var offsets = SHAPE_PATTERN[type];
-            foreach (var offset in offsets)
-            {
-                Blocks.Add(offset, new Block());
+            UnitType unitType = (UnitType)Random.Range(0, (int)UnitType.Max);
+			switch(unitType)
+			{
+                case UnitType.Route: InitBlocksUnitTwo(type, unitType); break;
+                case UnitType.Summon: InitBlocksUnitOne(type, unitType); break;
+                default:
+                    var offsets = SHAPE_PATTERN[type];
+                    foreach(var offset in offsets)
+                    {
+                        Blocks.Add(offset, new Block());
+                    }
+                    break;
             }
 
             foreach (var kvp in Blocks)
@@ -88,6 +127,53 @@ namespace DigrisDungeon
                 }
             }
         }
+
+        #region Init Unit
+        private void InitBlocksUnitOne(ShapeType shapeType, UnitType unitType)
+        {
+            var offsets = SHAPE_PATTERN[shapeType];
+
+            int[] unitPattern = UNIT_ONE_PATTERN[shapeType];
+            int targetIndex = unitPattern[Random.Range(0, unitPattern.Length)];
+
+            for(int i = 0; i < offsets.Length; i++)
+            {
+                Vector2Int offset = offsets[i];
+                Block block = new Block();
+                Blocks.Add(offset, block);
+                if(i == targetIndex) SetData(block, unitType);
+            }
+        }
+
+        private void InitBlocksUnitTwo(ShapeType shapeType, UnitType unitType)
+        {
+            var offsets = SHAPE_PATTERN[shapeType];
+
+            int[][] unitPattern = UNIT_TWO_PATTERN[shapeType];
+            int[] targetIndexs = unitPattern[Random.Range(0, unitPattern.Length)];
+
+            for(int i = 0; i < offsets.Length; i++)
+            {
+                Vector2Int offset = offsets[i];
+                Block block = new Block();
+                Blocks.Add(offset, block);
+                if(Array.IndexOf(targetIndexs, i) >= 0) SetData(block, unitType);
+            }
+        }
+
+        private void SetData(Block data, UnitType unitType)
+        {
+            switch(unitType)
+            {
+                case UnitType.Route:
+                    data.IsRounte = true;
+                    break;
+                case UnitType.Summon:
+                    data.Summon = new Summon(1);
+                    break;
+            }
+        }
+        #endregion // Init Unit
 
         public void Rotate()
         {

@@ -9,6 +9,8 @@ namespace DigrisDungeon
 {
     public class GameManager : MonoBehaviour
     {
+        public static GameManager Instance { get; private set; }
+
         private static readonly Vector2Int MINO_SPAWN_POS = new Vector2Int(5, 14);
 
         /// <summary> 地層の最低高さ </summary>
@@ -27,6 +29,12 @@ namespace DigrisDungeon
         private Transform _effectsParent;
 
         [SerializeField]
+        private Transform _summonViewParent;
+
+        [SerializeField]
+        private SummonView _summonViewPrefab;
+
+        [SerializeField]
         private Vector2Int _boardSize = new Vector2Int(10, 17);
         public Vector2Int BoardSize => _boardSize;
 
@@ -36,6 +44,8 @@ namespace DigrisDungeon
 
         private Mino _mino;
 
+        private Dictionary<Summon, SummonView> _summons = new Dictionary<Summon, SummonView>();
+
         public static int Distance(Vector2Int a, Vector2Int b)
         {
             return Math.Max(Mathf.Abs(a.x - b.x), Mathf.Abs(a.y - b.y));
@@ -43,6 +53,8 @@ namespace DigrisDungeon
 
         private void Awake()
         {
+            Instance = this;
+
             _board = new Block[BoardSize.x, BoardSize.y];
             _boardView = new BlockView[BoardSize.x, BoardSize.y];
             for (int y = 0; y < BoardSize.y; y++)
@@ -227,6 +239,32 @@ namespace DigrisDungeon
         }
         #endregion // Board Management
 
+        #region Summon
+        private SummonView CreateSummonView(Summon data)
+        {
+            SummonView view = Instantiate(_summonViewPrefab, _summonViewParent);
+            view.SetData(data);
+            _summons.Add(data, view);
+            return view;
+        }
+
+        public SummonView GetSummonView(Summon data)
+        {
+            if(_summons.TryGetValue(data, out SummonView view)) return view;
+            return CreateSummonView(data);
+        }
+
+        private void DestroySummonView(Summon data)
+        {
+            if(data == null) return;
+            Debug.Log("DestroySummonView");
+            SummonView view = GetSummonView(data);
+            if(view == null) return;
+            _summons.Remove(data);
+            Destroy(view.gameObject);
+        }
+        #endregion // Summon
+
         private void RefreshBoard()
         {
             DrawBoard();
@@ -279,10 +317,16 @@ namespace DigrisDungeon
                     brokenBlock.LinkedBlocks.Clear();
                     // 地層ブロックフラグを外す
                     brokenBlock.IsStrata = false;
+                    // 召喚キャラを削除する TODO: スキルを発動させる
+                    Summon eraseSummon = brokenBlock.Summon;
+                    brokenBlock.Summon = null;
 
                     BlockView blockView = GetBlockView(x, y);
                     Vector2 boardPos = GetBoardPosition(x, y);
                     seq.AppendCallback(() => {
+                        // 召喚キャラを削除する TODO: スキルを発動させる
+                        DestroySummonView(eraseSummon);
+
                         blockView.SetData(brokenBlock);
                         foreach (Block linckedBlock in brokenBlock.LinkedBlocks)
                             GetBlockView(GetIndex(linckedBlock)).SetData(linckedBlock);
@@ -358,11 +402,16 @@ namespace DigrisDungeon
                     {
                         Block erasedBlock = _board[x, y];
                         bool isEraseLine = y == alignLines[i];
+                        Summon eraseSummon = null;
                         if (isEraseLine && erasedBlock != null)
                         {
                             // 消す対象のブロックと連結するブロックから、連結を外す
                             foreach (Block linckedBlock in erasedBlock.LinkedBlocks)
                                 linckedBlock.LinkedBlocks.Remove(erasedBlock);
+
+                            // 召喚キャラを削除する TODO: スキルを発動させる
+                            eraseSummon = erasedBlock.Summon;
+                            erasedBlock.Summon = null;
                         }
                         int dropY = y + 1;
                         Block dropBlock = GetBlock(x, dropY);
@@ -371,6 +420,9 @@ namespace DigrisDungeon
                         BlockView blockView = GetBlockView(x, y);
                         Vector2 boardPos = GetBoardPosition(x, y);
                         preEraseEvent += () => {
+                            // 召喚キャラを削除する TODO: スキルを発動させる
+                            DestroySummonView(eraseSummon);
+
                             blockView.SetData(dropBlock);
                             if (dropBlock != null) blockView.SetPositionY(dropY);
                             if (isEraseLine)
@@ -414,6 +466,8 @@ namespace DigrisDungeon
                 int emptyX = UnityEngine.Random.Range(0, BoardSize.x);
                 for (int x = 0; x < BoardSize.x; x++)
                 {
+                    // TODO: 召喚キャラがスクロールアウトされたらビューを削除する
+
                     if (ty >= 0)
                         _board[x, y] = _board[x, ty];
                     else if (x != emptyX)

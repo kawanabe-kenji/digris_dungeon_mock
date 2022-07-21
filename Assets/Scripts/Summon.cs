@@ -6,6 +6,11 @@ namespace DigrisDungeon
 {
     public class Summon
     {
-        public int Id;
+        public int Id { get; private set; }
+
+        public Summon(int id)
+        {
+            Id = id;
+        }
     }
 }
