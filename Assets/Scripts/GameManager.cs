@@ -214,6 +214,7 @@ namespace DigrisDungeon
 
         private void RefreshBoard()
         {
+            DrawBoard();
             _controlMgr.Interactable = false;
 
             Sequence seq = DOTween.Sequence();
@@ -221,23 +222,24 @@ namespace DigrisDungeon
             // ラインが揃ってる列を崩す
             BrakeAlignLines(seq);
 
-            bool isDropped;
-            do
+            // 単一ブロックを落とす
+            bool isDropped = DropSingleBlock(seq);
+            if(!isDropped)
             {
-                // 単一ブロックを落とす
-                isDropped = DropSingleBlock(seq);
-                // ラインが揃ってる列を空けて下に詰める
-                EraseAlignLines(seq);
-                // 必要な深さだけ画面をスクロールして地層を露出させる
-                ScrollStrata(seq);
-            } while (isDropped);
+                seq.AppendCallback(() => {
+                    // 盤面データをビューに反映
+                    DrawBoard();
+                    DrawMino();
+                    _controlMgr.Interactable = true;
+                });
+                return;
+            }
 
-            seq.AppendCallback(() => {
-                // 盤面データをビューに反映
-                DrawBoard();
-                DrawMino();
-                _controlMgr.Interactable = true;
-            });
+            // ラインが揃ってる列を空けて下に詰める
+            EraseAlignLines(seq);
+            // 必要な深さだけ画面をスクロールして地層を露出させる
+            ScrollStrata(seq);
+            seq.AppendCallback(RefreshBoard);
         }
 
         /// <summary>
@@ -254,12 +256,16 @@ namespace DigrisDungeon
                     Block brokenBlock = _board[x, y];
                     if (brokenBlock == null) continue;
                     // 対象ブロックと連結するブロックから、連結を外す
-                    foreach (Block linckedBlock in brokenBlock.LinkedBlocks)
+                    foreach(Block linckedBlock in brokenBlock.LinkedBlocks)
+                    {
                         linckedBlock.LinkedBlocks.Remove(brokenBlock);
+                        GetBlockView(GetIndex(linckedBlock)).SetData(linckedBlock);
+                    }
                     // 対象ブロック自身から全ての連結を外す
                     brokenBlock.LinkedBlocks.Clear();
                     // 地層ブロックフラグを外す
                     brokenBlock.IsStrata = false;
+                    GetBlockView(x, y).SetData(brokenBlock);
 
                     Vector2 boardPos = GetBoardPosition(x, y);
                     seq.AppendCallback(() => {
@@ -269,8 +275,7 @@ namespace DigrisDungeon
                     });
                 }
             }
-            seq.AppendCallback(DrawBoard);
-            seq.AppendInterval(0.5f);
+            seq.AppendInterval(1f);
         }
 
         /// <summary>
@@ -279,9 +284,9 @@ namespace DigrisDungeon
         /// <returns>ドロップが発生したかどうか</returns>
         private bool DropSingleBlock(Sequence seq)
         {
-            seq.AppendCallback(DrawBoard);
             bool isDropped = false;
-            for (int y = 0; y < BoardSize.y; y++)
+            Action preDropEvent = null;
+            for(int y = 0; y < BoardSize.y; y++)
             {
                 for (int x = 0; x < BoardSize.x; x++)
                 {
@@ -296,17 +301,27 @@ namespace DigrisDungeon
                     if (dropY == y) continue;
                     _board[x, dropY] = block;
                     _board[x, y] = null;
-                    isDropped = true;
 
                     BlockView blockView = GetBlockView(x, dropY);
                     BlockView preBlockView = GetBlockView(x, y);
                     int preY = y;
-                    seq.PrependCallback(() => {
+                    preDropEvent += () => {
                         blockView.SetData(block);
                         blockView.SetPositionY(preY);
                         preBlockView.SetData(null);
-                    });
-                    seq.Join(blockView.Rect.DOAnchorPosY(BlockView.CELL_SIZE.y * dropY, 1f).SetEase(Ease.OutCubic));
+                    };
+                    Tween tween = blockView.Rect.DOAnchorPosY(BlockView.CELL_SIZE.y * dropY, 1f).SetEase(Ease.OutCubic);
+                    if(isDropped) seq.Join(tween);
+                    else
+                    {
+                        tween.OnStart(() =>
+                        {
+                            preDropEvent?.Invoke();
+                            Debug.Log("DropSingleBlock Start");
+                        });
+                        seq.Append(tween);
+                    }
+                    isDropped = true;
                 }
             }
             if(isDropped) seq.AppendInterval(0.2f);
@@ -318,7 +333,8 @@ namespace DigrisDungeon
         /// </summary>
         private void EraseAlignLines(Sequence seq)
         {
-            seq.AppendCallback(DrawBoard);
+            bool isFirst = true;
+            Action preEraseEvent = null;
             List<int> alignLines = GetAlignLines();
             for (int i = alignLines.Count - 1; i >= 0; i--)
             {
@@ -340,21 +356,30 @@ namespace DigrisDungeon
 
                         BlockView blockView = GetBlockView(x, y);
                         Vector2 boardPos = GetBoardPosition(x, y);
-                        seq.PrependCallback(() => {
+                        preEraseEvent += () => {
                             blockView.SetData(dropBlock);
-                            if (isEraseLine && dropBlock != null)
+                            if (isEraseLine)
                             {
-                                blockView.SetPositionY(dropY);
+                                if(dropBlock != null) blockView.SetPositionY(dropY);
                                 RectTransform effectPrefab = Resources.Load<RectTransform>("Effects/ef_impact/ef_impact_rect");
                                 RectTransform effect = Instantiate(effectPrefab, _effectsParent);
                                 effect.anchoredPosition = boardPos;
                             }
-                        });
-                        if (dropBlock != null)
+                        };
+
+                        if(dropBlock == null) continue;
+
+                        Tween tween = blockView.Rect.DOAnchorPosY(BlockView.CELL_SIZE.y * y, 1f).SetEase(Ease.OutCubic);
+                        if(isFirst)
                         {
-                            int ty = y;
-                            seq.Join(blockView.Rect.DOAnchorPosY(BlockView.CELL_SIZE.y * ty, 1f).SetEase(Ease.OutCubic));
+                            tween.OnStart(() => {
+                                preEraseEvent?.Invoke();
+                                Debug.Log("EraseAlignLines Start");
+                            });
+                            seq.Append(tween);
                         }
+                        else seq.Join(tween);
+                        isFirst = false;
                     }
                 }
             }
