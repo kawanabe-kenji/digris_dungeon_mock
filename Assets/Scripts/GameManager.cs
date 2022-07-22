@@ -411,6 +411,20 @@ namespace DigrisDungeon
             return isDropped;
         }
 
+        private bool DropBlock(Sequence seq)
+        {
+            bool isDropped = false;
+            for (int y = 0; y < BoardSize.y; y++)
+            {
+                for (int x = 0; x < BoardSize.x; x++)
+                {
+                    Block block = _board[x, y];
+                    if (block == null || block.IsStrata) continue;
+                }
+            }
+            return isDropped;
+        }
+
         /// <summary>
         /// ラインが揃ってる列を空けて下に詰める
         /// </summary>
