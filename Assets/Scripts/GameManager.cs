@@ -294,25 +294,31 @@ namespace DigrisDungeon
             // パーティモンスターがルートを歩く
             TraceSummon(seq);
 
-            // 単一ブロックを落とす
-            bool isDropped = DropSingleBlock(seq);
-            if(!isDropped)
+            seq.AppendCallback(() =>
             {
-                ScrollStrata(seq);
-                seq.AppendCallback(() => {
-                    // 盤面データをビューに反映
-                    DrawBoard();
-                    DrawMino();
-                    _controlMgr.Interactable = true;
-                });
-                return;
-            }
-
-            // ラインが揃ってる列を空けて下に詰める
-            EraseAlignLines(seq);
-            // 必要な深さだけ画面をスクロールして地層を露出させる
-            if (GetHighestStrata() < 0) ScrollStrata(seq);
-            seq.AppendCallback(RefreshBoard);
+                Sequence seqDrop = DOTween.Sequence();
+                // 単一ブロックを落とす
+                bool isDropped = DropSingleBlock(seqDrop);
+                if (isDropped)
+                {
+                    // ラインが揃ってる列を空けて下に詰める
+                    EraseAlignLines(seqDrop);
+                    // 必要な深さだけ画面をスクロールして地層を露出させる
+                    if (GetHighestStrata() < 0) ScrollStrata(seqDrop);
+                    seqDrop.AppendCallback(RefreshBoard);
+                }
+                else
+                {
+                    ScrollStrata(seqDrop);
+                    seqDrop.AppendCallback(() =>
+                    {
+                        // 盤面データをビューに反映
+                        DrawBoard();
+                        DrawMino();
+                        _controlMgr.Interactable = true;
+                    });
+                }
+            });
         }
 
         /// <summary>
@@ -559,10 +565,13 @@ namespace DigrisDungeon
                             breakBlock.LinkedBlocks.Clear();
                         }
 
+                        // 歩いたルートブロックを非表示にする
+                        BlockView eraseBlock = GetBlockView(pos);
                         // 隣接ブロックを崩す演出
                         var summonView = GetSummonView(summon);
                         var currentPos = pos;
                         seq.AppendCallback(() => {
+                            eraseBlock.SetData(null);
                             for (int j = 0; j < (int)DirectionType.Max; j++)
                             {
                                 Vector2Int brakePos = currentPos + ((DirectionType)j).GetOffset();
@@ -578,9 +587,6 @@ namespace DigrisDungeon
                         // 召喚キャラの移動演出
                         var rectPos = GetBoardAnchoredPosition(movePos);
                         seq.Append(summonView.Rect.DOAnchorPos(rectPos, 0.5f));
-                        // 歩いたルートブロックを非表示にする
-                        BlockView eraseBlock = GetBlockView(pos);
-                        seq.AppendCallback(() => eraseBlock.SetData(null));
 
                         pos = movePos;
                         isOneMove = true;
