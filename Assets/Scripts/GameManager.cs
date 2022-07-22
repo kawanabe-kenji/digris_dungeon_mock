@@ -627,6 +627,7 @@ namespace DigrisDungeon
                         GetBlockView(pos).SetData(null);
                         DestroySummonView(summon);
                     });
+                    seq.AppendInterval(0.5f);
                 }
             }
         }
