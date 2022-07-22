@@ -495,7 +495,27 @@ namespace DigrisDungeon
         /// </summary>
         private void TraceSummon(Sequence seq)
         {
+            Dictionary<Vector2Int, Summon> summons = new Dictionary<Vector2Int, Summon>();
+            for(int y = 0; y < BoardSize.y; y++)
+            for(int x = 0; x < BoardSize.x; x++)
+            {
+                Summon summon = _board[x, y].Summon;
+                if(summon != null) summons.Add(new Vector2Int(x, y), summon);
+            }
 
+            DirectionType[] directions = new DirectionType[] { DirectionType.Right, DirectionType.Left, DirectionType.Down };
+            foreach(var kvp in summons)
+            {
+                Vector2Int pos = kvp.Key;
+                Summon summon = kvp.Value;
+                for(int i = 0; i < directions.Length; i++)
+                {
+                    Block block = GetBlock(pos + directions[i].GetOffset());
+                    if(block == null || !block.IsRounte) continue;
+                    //var sseq = DOTween.Sequence();
+                    //seq.Append(sseq);
+                }
+            }
         }
 
         private void DrawBoard()
