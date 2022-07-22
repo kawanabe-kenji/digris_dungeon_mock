@@ -222,6 +222,22 @@ namespace DigrisDungeon
                 BlockView.CELL_SIZE.y * (0.5f + y)
             );
         }
+        private Vector2 GetBoardPosition(Vector2Int index)
+        {
+            return GetBoardPosition(index.x, index.y);
+        }
+
+        private Vector2 GetBoardAnchoredPosition(int x, int y)
+        {
+            return new Vector2(
+                BlockView.CELL_SIZE.x * x,
+                BlockView.CELL_SIZE.y * y
+            );
+        }
+        private Vector2 GetBoardAnchoredPosition(Vector2Int index)
+        {
+            return GetBoardAnchoredPosition(index.x, index.y);
+        }
 
         private int GetHighestStrata()
         {
@@ -274,6 +290,9 @@ namespace DigrisDungeon
 
             // ラインが揃ってる列を崩す
             BrakeAlignLines(seq);
+
+            // パーティモンスターがルートを歩く
+            TraceSummon(seq);
 
             // 単一ブロックを落とす
             bool isDropped = DropSingleBlock(seq);
@@ -499,7 +518,9 @@ namespace DigrisDungeon
             for(int y = 0; y < BoardSize.y; y++)
             for(int x = 0; x < BoardSize.x; x++)
             {
-                Summon summon = _board[x, y].Summon;
+                Block block = _board[x, y];
+                if (block == null) continue;
+                Summon summon = block.Summon;
                 if(summon != null) summons.Add(new Vector2Int(x, y), summon);
             }
 
@@ -508,12 +529,98 @@ namespace DigrisDungeon
             {
                 Vector2Int pos = kvp.Key;
                 Summon summon = kvp.Value;
-                for(int i = 0; i < directions.Length; i++)
+
+                Block startBlock = GetBlock(pos);
+
+                bool isOneMove = false;
+                bool isMove = false;
+                do
                 {
-                    Block block = GetBlock(pos + directions[i].GetOffset());
-                    if(block == null || !block.IsRounte) continue;
-                    //var sseq = DOTween.Sequence();
-                    //seq.Append(sseq);
+                    isMove = false;
+                    for (int i = 0; i < directions.Length; i++)
+                    {
+                        var movePos = pos + directions[i].GetOffset();
+                        Block moveBlock = GetBlock(movePos);
+                        if (moveBlock == null || !moveBlock.IsRounte) continue;
+
+                        // 歩いたルートブロックを消費
+                        _board[pos.x, pos.y] = null;
+
+                        // 隣接ブロックを崩す
+                        for (int j = 0; j < (int)DirectionType.Max; j++)
+                        {
+                            Vector2Int offset = ((DirectionType)j).GetOffset();
+                            var breakBlock = GetBlock(pos + offset);
+                            if (breakBlock == null || breakBlock.IsRounte || breakBlock.Summon != null) continue;
+                            // 対象ブロックと連結するブロックから、連結を外す
+                            foreach (Block linckedBlock in breakBlock.LinkedBlocks)
+                                linckedBlock.LinkedBlocks.Remove(breakBlock);
+                            // 対象ブロック自身から全ての連結を外す
+                            breakBlock.LinkedBlocks.Clear();
+                        }
+
+                        // 隣接ブロックを崩す演出
+                        var summonView = GetSummonView(summon);
+                        var currentPos = pos;
+                        seq.AppendCallback(() => {
+                            for (int j = 0; j < (int)DirectionType.Max; j++)
+                            {
+                                Vector2Int brakePos = currentPos + ((DirectionType)j).GetOffset();
+                                var targetBlock = GetBlock(brakePos);
+                                if (targetBlock == null || targetBlock.IsRounte || targetBlock.Summon != null) continue;
+                                GetBlockView(brakePos).SetData(targetBlock);
+                                RectTransform effectPrefab = Resources.Load<RectTransform>("Effects/ef_stone_impact/ef_stone_impact_rect");
+                                RectTransform effect = Instantiate(effectPrefab, _effectsParent);
+                                effect.anchoredPosition = GetBoardPosition(brakePos);
+                            }
+                            summonView.Rect.SetParent(_summonViewParent, true);
+                        });
+                        // 召喚キャラの移動演出
+                        var rectPos = GetBoardAnchoredPosition(movePos);
+                        seq.Append(summonView.Rect.DOAnchorPos(rectPos, 0.5f));
+                        // 歩いたルートブロックを非表示にする
+                        BlockView eraseBlock = GetBlockView(pos);
+                        seq.AppendCallback(() => eraseBlock.SetData(null));
+
+                        pos = movePos;
+                        isOneMove = true;
+                        isMove = true;
+                        break;
+                    }
+                } while (isMove);
+
+                if (isOneMove)
+                {
+                    // 隣接ブロックを崩す
+                    for (int j = 0; j < (int)DirectionType.Max; j++)
+                    {
+                        Vector2Int offset = ((DirectionType)j).GetOffset();
+                        var breakBlock = GetBlock(pos + offset);
+                        if (breakBlock == null || breakBlock.IsRounte || breakBlock.Summon != null) continue;
+                        // 対象ブロックと連結するブロックから、連結を外す
+                        foreach (Block linckedBlock in breakBlock.LinkedBlocks)
+                            linckedBlock.LinkedBlocks.Remove(breakBlock);
+                        // 対象ブロック自身から全ての連結を外す
+                        breakBlock.LinkedBlocks.Clear();
+                    }
+
+                    _board[pos.x, pos.y] = null;
+
+                    startBlock.Summon = null;
+                    seq.AppendCallback(() => {
+                        for (int j = 0; j < (int)DirectionType.Max; j++)
+                        {
+                            Vector2Int brakePos = pos + ((DirectionType)j).GetOffset();
+                            var targetBlock = GetBlock(brakePos);
+                            if (targetBlock == null || targetBlock.IsRounte || targetBlock.Summon != null) continue;
+                            GetBlockView(brakePos).SetData(targetBlock);
+                            RectTransform effectPrefab = Resources.Load<RectTransform>("Effects/ef_stone_impact/ef_stone_impact_rect");
+                            RectTransform effect = Instantiate(effectPrefab, _effectsParent);
+                            effect.anchoredPosition = GetBoardPosition(brakePos);
+                        }
+                        GetBlockView(pos).SetData(null);
+                        DestroySummonView(summon);
+                    });
                 }
             }
         }
