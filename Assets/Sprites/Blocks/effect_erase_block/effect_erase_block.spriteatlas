@@ -1,0 +1,156 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: effect_erase_block
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 1
+      enableTightPacking: 0
+      enableAlphaDilation: 0
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 102900000, guid: f39e3024604834ef380eb8b3bdaff613, type: 3}
+    bindAsDefault: 1
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: -1898478131, guid: e631bce6c2db4452fb6af7e1280ee3f5, type: 3}
+  - {fileID: 1087635804, guid: e631bce6c2db4452fb6af7e1280ee3f5, type: 3}
+  - {fileID: -1598383962, guid: e631bce6c2db4452fb6af7e1280ee3f5, type: 3}
+  - {fileID: -1085392767, guid: e631bce6c2db4452fb6af7e1280ee3f5, type: 3}
+  - {fileID: 1540407595, guid: e631bce6c2db4452fb6af7e1280ee3f5, type: 3}
+  - {fileID: -823692684, guid: e631bce6c2db4452fb6af7e1280ee3f5, type: 3}
+  - {fileID: 1031857659, guid: e631bce6c2db4452fb6af7e1280ee3f5, type: 3}
+  - {fileID: -883684201, guid: e631bce6c2db4452fb6af7e1280ee3f5, type: 3}
+  - {fileID: 23837762, guid: 898e05581bb5f4127951dc5c2305e4dd, type: 3}
+  - {fileID: -497336633, guid: 898e05581bb5f4127951dc5c2305e4dd, type: 3}
+  - {fileID: 1680750295, guid: 898e05581bb5f4127951dc5c2305e4dd, type: 3}
+  - {fileID: -1338568670, guid: 898e05581bb5f4127951dc5c2305e4dd, type: 3}
+  - {fileID: -1185272555, guid: 898e05581bb5f4127951dc5c2305e4dd, type: 3}
+  - {fileID: -183139171, guid: 898e05581bb5f4127951dc5c2305e4dd, type: 3}
+  - {fileID: 724724732, guid: 898e05581bb5f4127951dc5c2305e4dd, type: 3}
+  - {fileID: -524827357, guid: 898e05581bb5f4127951dc5c2305e4dd, type: 3}
+  - {fileID: 1849089742, guid: 145abc09d69ba44e4b5f54b3c7ab13aa, type: 3}
+  - {fileID: -1957927200, guid: 145abc09d69ba44e4b5f54b3c7ab13aa, type: 3}
+  - {fileID: -1916163706, guid: 145abc09d69ba44e4b5f54b3c7ab13aa, type: 3}
+  - {fileID: -858436839, guid: 145abc09d69ba44e4b5f54b3c7ab13aa, type: 3}
+  - {fileID: -635998796, guid: 145abc09d69ba44e4b5f54b3c7ab13aa, type: 3}
+  - {fileID: -1679976565, guid: 145abc09d69ba44e4b5f54b3c7ab13aa, type: 3}
+  - {fileID: 1387961343, guid: 145abc09d69ba44e4b5f54b3c7ab13aa, type: 3}
+  - {fileID: -864491899, guid: 145abc09d69ba44e4b5f54b3c7ab13aa, type: 3}
+  - {fileID: 624636407, guid: 829e3a4ac4f294242b03f26608e68771, type: 3}
+  - {fileID: -1537296531, guid: 829e3a4ac4f294242b03f26608e68771, type: 3}
+  - {fileID: -2666812, guid: 829e3a4ac4f294242b03f26608e68771, type: 3}
+  - {fileID: 262361121, guid: 829e3a4ac4f294242b03f26608e68771, type: 3}
+  - {fileID: 1622452774, guid: 829e3a4ac4f294242b03f26608e68771, type: 3}
+  - {fileID: -1111166000, guid: 829e3a4ac4f294242b03f26608e68771, type: 3}
+  - {fileID: -1949542662, guid: 829e3a4ac4f294242b03f26608e68771, type: 3}
+  - {fileID: -68572545, guid: 829e3a4ac4f294242b03f26608e68771, type: 3}
+  - {fileID: 2133494219, guid: fae7ebfab4b42444aa0b6bc3d46b7805, type: 3}
+  - {fileID: -1378550912, guid: fae7ebfab4b42444aa0b6bc3d46b7805, type: 3}
+  - {fileID: -1427652985, guid: fae7ebfab4b42444aa0b6bc3d46b7805, type: 3}
+  - {fileID: 2092588486, guid: fae7ebfab4b42444aa0b6bc3d46b7805, type: 3}
+  - {fileID: 1432005147, guid: fae7ebfab4b42444aa0b6bc3d46b7805, type: 3}
+  - {fileID: 374907707, guid: fae7ebfab4b42444aa0b6bc3d46b7805, type: 3}
+  - {fileID: 951675084, guid: fae7ebfab4b42444aa0b6bc3d46b7805, type: 3}
+  - {fileID: 563009425, guid: fae7ebfab4b42444aa0b6bc3d46b7805, type: 3}
+  - {fileID: 892329250, guid: d48423bc86a764388a847cab13a21b92, type: 3}
+  - {fileID: 1619247875, guid: d48423bc86a764388a847cab13a21b92, type: 3}
+  - {fileID: -306062761, guid: d48423bc86a764388a847cab13a21b92, type: 3}
+  - {fileID: -1912702764, guid: d48423bc86a764388a847cab13a21b92, type: 3}
+  - {fileID: -883591952, guid: d48423bc86a764388a847cab13a21b92, type: 3}
+  - {fileID: -1819230529, guid: d48423bc86a764388a847cab13a21b92, type: 3}
+  - {fileID: 760244535, guid: d48423bc86a764388a847cab13a21b92, type: 3}
+  - {fileID: -1260665795, guid: d48423bc86a764388a847cab13a21b92, type: 3}
+  - {fileID: 236655814, guid: 390bbf0dca0bd47e5ab0c1f51720fca0, type: 3}
+  - {fileID: 390174167, guid: 390bbf0dca0bd47e5ab0c1f51720fca0, type: 3}
+  - {fileID: -685009741, guid: 390bbf0dca0bd47e5ab0c1f51720fca0, type: 3}
+  - {fileID: 699595990, guid: 390bbf0dca0bd47e5ab0c1f51720fca0, type: 3}
+  - {fileID: 854123882, guid: 390bbf0dca0bd47e5ab0c1f51720fca0, type: 3}
+  - {fileID: -2112302262, guid: 390bbf0dca0bd47e5ab0c1f51720fca0, type: 3}
+  - {fileID: 1683566173, guid: 390bbf0dca0bd47e5ab0c1f51720fca0, type: 3}
+  - {fileID: -1123770662, guid: 390bbf0dca0bd47e5ab0c1f51720fca0, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - effect_erase_yellow_7
+  - effect_erase_yellow_6
+  - effect_erase_yellow_5
+  - effect_erase_yellow_4
+  - effect_erase_yellow_3
+  - effect_erase_yellow_2
+  - effect_erase_yellow_1
+  - effect_erase_yellow_0
+  - effect_erase_light_blue_0
+  - effect_erase_light_blue_1
+  - effect_erase_light_blue_2
+  - effect_erase_light_blue_3
+  - effect_erase_light_blue_4
+  - effect_erase_light_blue_5
+  - effect_erase_light_blue_6
+  - effect_erase_light_blue_7
+  - effect_erase_blue_7
+  - effect_erase_blue_6
+  - effect_erase_blue_5
+  - effect_erase_blue_4
+  - effect_erase_blue_3
+  - effect_erase_blue_2
+  - effect_erase_blue_1
+  - effect_erase_blue_0
+  - effect_erase_green_6
+  - effect_erase_green_7
+  - effect_erase_green_4
+  - effect_erase_green_5
+  - effect_erase_green_2
+  - effect_erase_green_3
+  - effect_erase_green_0
+  - effect_erase_green_1
+  - effect_erase_red_2
+  - effect_erase_red_3
+  - effect_erase_red_0
+  - effect_erase_red_1
+  - effect_erase_red_6
+  - effect_erase_red_7
+  - effect_erase_red_4
+  - effect_erase_red_5
+  - effect_erase_purple_5
+  - effect_erase_purple_4
+  - effect_erase_purple_7
+  - effect_erase_purple_6
+  - effect_erase_purple_1
+  - effect_erase_purple_0
+  - effect_erase_purple_3
+  - effect_erase_purple_2
+  - effect_erase_orange_1
+  - effect_erase_orange_0
+  - effect_erase_orange_3
+  - effect_erase_orange_2
+  - effect_erase_orange_5
+  - effect_erase_orange_4
+  - effect_erase_orange_7
+  - effect_erase_orange_6
+  m_RenderDataMap: {}
+  m_Tag: effect_erase_block
+  m_IsVariant: 0
